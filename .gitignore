@@ -1,0 +1,79 @@
+# ============================
+#   ROS2 / Colcon Build
+# ============================
+build/
+install/
+log/
+.colcon/
+.colcon_install/
+colcon_command_prefix_setup.sh
+
+# ROS2 overlay workspaces
+build_*/*
+install_*/*
+log_*/*
+
+
+# ============================
+#   CMake & Build System
+# ============================
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+compile_commands.json
+
+# Qt Creator / CLion
+cmake-build-*/
+
+
+# ============================
+#   Python (ROS2 often includes Py nodes)
+# ============================
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info
+*.egg
+.eggs/
+pip-wheel-metadata/
+venv/
+.venv/
+
+
+# ============================
+#   VSCode / Editor
+# ============================
+.vscode/
+.idea/
+*.code-workspace
+
+
+# ============================
+#   Launch / Params Temp
+# ============================
+*.log
+*.tmp
+*.bak
+*.swp
+*.swo
+*.orig
+
+
+# ============================
+#   Generated Msg/Srv
+# ============================
+rosidl_generator_py/
+rosidl_generator_cpp/
+rosidl_cmake/
+
+
+# ============================
+#   Misc
+# ============================
+*.user
+*.local
+*.config
+.DS_Store
+Thumbs.db

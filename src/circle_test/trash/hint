@@ -1,0 +1,11 @@
+// 假设已有 current_q_w, current_q_x, current_q_y, current_q_z (从 vehicle attitude 订阅得到)
+Eigen::Quaternionf q(current_q_w, current_q_x, current_q_y, current_q_z);
+// v_body 是机体坐标系下的速度向量 (x_forward, y_right, z_down)
+Eigen::Vector3f v_body(vx_b, vy_b, vz_b);
+Eigen::Vector3f v_ned = q * v_body; // 把机体向量旋转到 NED
+
+px4_msgs::msg::TrajectorySetpoint msg{};
+msg.timestamp = this->get_clock()->now().nanoseconds() / 1000;
+msg.velocity = {v_ned.x(), v_ned.y(), v_ned.z()};
+msg.acceleration = {a_ned.x(), a_ned.y(), a_ned.z()};
+trajectory_setpoint_publisher_->publish(msg);
