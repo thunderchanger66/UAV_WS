@@ -19,6 +19,10 @@ add_executable(circle_test src/circle_test.cpp)
 ament_target_dependencies(circle_test rclcpp px4_msgs Eigen3)
 install(TARGETS circle_test DESTINATION lib/${PROJECT_NAME})
 
+add_executable(circle_enhance src/circle_enhance.cpp)
+ament_target_dependencies(circle_enhance rclcpp px4_msgs)
+install(TARGETS circle_enhance DESTINATION lib/${PROJECT_NAME})
+
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   # the following line skips the linter which checks for copyrights
