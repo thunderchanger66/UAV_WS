@@ -3,9 +3,11 @@
 #include "px4_msgs/msg/offboard_control_mode.hpp"
 #include "px4_msgs/msg/trajectory_setpoint.hpp"
 #include "px4_msgs/msg/vehicle_command.hpp"
+#include "px4_msgs/msg/vehicle_global_position.hpp"
 
 #include <chrono>
 #include <iostream>
+#include <atomic>
 
 class CircleTest : public rclcpp::Node {
 public:
@@ -14,16 +16,28 @@ public:
         trajectory_setpoint_publisher_ = this->create_publisher<px4_msgs::msg::TrajectorySetpoint>("/fmu/in/trajectory_setpoint", 10);
         vehicle_command_publisher_ = this->create_publisher<px4_msgs::msg::VehicleCommand>("/fmu/in/vehicle_command", 10);
 
-        offboard_setpoint_counter_ = 0;
+        rmw_qos_profile_t qos_profile = rmw_qos_profile_sensor_data;
+        auto qos = rclcpp::QoS(rclcpp::QoSInitialization(qos_profile.history, 5), qos_profile);
+        vehicle_global_position_subscription_ = this->create_subscription<px4_msgs::msg::VehicleGlobalPosition>(
+            "/fmu/out/vehicle_global_position", qos,
+            std::bind(&CircleTest::vehicle_global_position_subscription_callback, this, std::placeholders::_1)
+        );
 
+        offboard_setpoint_counter_ = 0;
         auto timer_callback = [this]() -> void {
             if (offboard_setpoint_counter_ == 10) {
                 this->publish_vehicle_command(px4_msgs::msg::VehicleCommand::VEHICLE_CMD_DO_SET_MODE, 1, 6);
                 this->arm();
             }
 
-            publish_offboard_control_mode();
-            publish_trajectory_setpoint();
+            if(is_enough) {
+                publish_offboard_control_mode();
+                publish_trajectory_setpoint();
+            }
+            else {
+                publish_offboard_control_mode();
+                height_call();
+            }
 
             if (offboard_setpoint_counter_ < 11) offboard_setpoint_counter_++;
         };
@@ -51,7 +65,22 @@ private:
     float v = 3.0f;
     float r = 3.0f;
     float omega = v / r;
+
+    rclcpp::Subscription<px4_msgs::msg::VehicleGlobalPosition>::SharedPtr vehicle_global_position_subscription_;
+    void vehicle_global_position_subscription_callback(const px4_msgs::msg::VehicleGlobalPosition::UniquePtr msg);
+    std::atomic_bool is_enough{false};
+    void height_call() {
+        px4_msgs::msg::TrajectorySetpoint msg{};
+        msg.position = {0.0, 0.0, -5.0};
+        //msg.yaw = -3.14; // [-PI:PI]
+        msg.timestamp = this->get_clock()->now().nanoseconds() / 1000;
+        trajectory_setpoint_publisher_->publish(msg);
+    }
 };
+
+void CircleTest::vehicle_global_position_subscription_callback(const px4_msgs::msg::VehicleGlobalPosition::UniquePtr msg) {
+    if(msg->alt > 4.9) is_enough = true;
+}
 
 void CircleTest::publish_vehicle_command(uint16_t command, float param1, float param2) {
     px4_msgs::msg::VehicleCommand msg{};
@@ -69,8 +98,8 @@ void CircleTest::publish_vehicle_command(uint16_t command, float param1, float p
 
 void CircleTest::publish_offboard_control_mode() {
     px4_msgs::msg::OffboardControlMode msg{};
-    msg.position = false;
-	msg.velocity = true;
+    msg.position = true;
+	msg.velocity = false;
 	msg.acceleration = false;
 	msg.attitude = false;
 	msg.body_rate = false;
@@ -81,10 +110,10 @@ void CircleTest::publish_offboard_control_mode() {
 void CircleTest::publish_trajectory_setpoint() {
     px4_msgs::msg::TrajectorySetpoint msg{};
 
-    float vx = v * cos(omega * t);
-    float vy = v * sin(omega * t);
-    msg.velocity = {vx, vy, 0.0};
-    msg.yaw = atan2(vy, vx);
+    float px = r * cos(omega * t);
+    float py = r * sin(omega * t);
+    msg.position = {px, py, -5.0};
+    msg.yaw = atan2(py, px);
 
     msg.timestamp = this->get_clock()->now().nanoseconds() / 1000;
     trajectory_setpoint_publisher_->publish(msg);
