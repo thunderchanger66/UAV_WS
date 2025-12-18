@@ -32,6 +32,11 @@ public:
     //     return coeff_xyz_;
     // }
 
+    std::vector<double> get_x_() { return sample_x_; }
+    std::vector<double> get_y_() { return sample_y_; }
+    std::vector<double> get_z_() { return sample_z_; }
+    int get_count_() { return count; }
+
     void sample(double dt = 0.1);//最重要的函数，计算采样后的值 默认100ms
 
 private:
@@ -44,7 +49,7 @@ private:
     std::vector<double> sample_x_;
     std::vector<double> sample_y_;
     std::vector<double> sample_z_;
-    std::vector<double> sample_t_;//画图需要t，临时用
+    int count = 0;//采样点计数
 
     std::vector<double> T_;//每段的时间
     std::vector<Eigen::Vector3d> waypoints_;//途径点的集合

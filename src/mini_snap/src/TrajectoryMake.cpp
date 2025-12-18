@@ -5,6 +5,8 @@
 #include <cmath>
 #include <iostream>
 
+#include <fstream>
+
 void TrajectoryMake::setWaypoints(const std::vector<Eigen::Vector3d>& pts) {
     waypoints_ = pts;
     if (pts.size() < 2) {
@@ -179,7 +181,7 @@ void TrajectoryMake::sample(double dt) {
             sample_x_.push_back(x);
             sample_y_.push_back(y);
             sample_z_.push_back(z);
-            sample_t_.push_back(t);//临时添加
+            count++;
         }
         first_seg = false;
     }
