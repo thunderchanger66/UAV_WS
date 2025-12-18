@@ -3,15 +3,33 @@
 #include <Eigen/Dense>
 #include <vector>
 #include <cmath>
+#include <iostream>
 
 void TrajectoryMake::setWaypoints(const std::vector<Eigen::Vector3d>& pts) {
     waypoints_ = pts;
+    if (pts.size() < 2) {
+        // Need at least two waypoints to form a segment
+        n_seg_ = 0;
+        T_.clear();
+        return;
+    }
+    n_seg_ = static_cast<int>(pts.size()) - 1; // 段数是端点数-1
+    // resize T_ to hold times for each segment
+    T_.assign(n_seg_, 0.0);
+    //下面修改时间优化
+    for (int i = 0; i < n_seg_; i++) {
+        T_[i] = computeSegmentTime(pts[i], pts[i + 1]);
+        T_[i] *= 1.2;//稍微放慢一点
+        std::cout<<"T_["<<i<<"] = "<<T_[i]<<std::endl;
+    }
 }
 
-void TrajectoryMake::setSegmentTimes(const std::vector<double>& times) {
-    T_ = times;
-    n_seg_ = times.size();//段数就是时间的段数
-}
+//下面这个可以不要了
+// void TrajectoryMake::setSegmentTimes(const std::vector<double>& times) {
+//     //T_ = times;
+//     n_seg_ = times.size();//段数就是时间的段数
+
+// }
 
 Eigen::MatrixXd TrajectoryMake::computeQ(double T) {
     Eigen::MatrixXd Q = Eigen::MatrixXd::Zero(n_coeff_, n_coeff_);
@@ -109,5 +127,34 @@ void TrajectoryMake::solve(int xyz) {
     Eigen::VectorXd rhs(H_.rows() + A_.rows());
     rhs << Eigen::VectorXd::Zero(H_.rows()), b_;
     Eigen::VectorXd sol = KKT.fullPivLu().solve(rhs);
-    coeff_x_ = sol.head(H_.rows()); 
+    switch(xyz) {//确定每个方向的系数
+        case 0:
+            coeff_x_ = sol.head(H_.rows());
+            break;
+        case 1:
+            coeff_y_ = sol.head(H_.rows());
+            break;
+        case 2:
+            coeff_z_ = sol.head(H_.rows());
+            break;
+    }
 }
+
+//采用最大加速-最大匀速-最大减速的时间段寻找方式，优化时间
+//但是要注意是否能到匀速，可能加减速就走完整段路程
+//这样就分为梯形位移图及三角形位移图
+// 加速v^2/(2ax),减速同理，则加减速总路程乘2
+double TrajectoryMake::computeSegmentTime(
+    const Eigen::Vector3d& p0,
+    const Eigen::Vector3d& p1) {
+        double d = (p1 - p0).norm();
+        double d_min = v_max * v_max / a_max;
+        if (d > d_min) {
+            double t_acc = v_max / a_max;
+            double d_steady = d - d_min;
+            double t_steady = d_steady / v_max;
+            return t_acc * 2 + t_steady;
+        }
+        else//这里一段是1/2a\Delta{t}，两段加一起是d，但是这是\Delta{t}，总的t是乘2
+            return std::sqrt(d / a_max) * 2;
+    }

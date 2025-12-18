@@ -11,11 +11,15 @@ int main() {
         {1, 1, 1},
         {2, 0, 1}
     };
-    std::vector<double> times = {2.0, 2.0};
+    //std::vector<double> times = {2.0, 2.0};
     TrajectoryMake tra;
     tra.setWaypoints(pts);
-    tra.setSegmentTimes(times);
-    tra.solve(2);
-    std::cout<<tra.get_coeff_x_()<<std::endl;
+    for (int i = 0; i < 3; i++)
+        tra.solve(i);
+    
+    //std::cout<<tra.get_coeff_xyz_().transpose()<<std::endl;
+    std::cout<<tra.get_coeff_x_().transpose()<<std::endl;
+    std::cout<<tra.get_coeff_y_().transpose()<<std::endl;
+    std::cout<<tra.get_coeff_z_().transpose()<<std::endl;
     return 0;
 }

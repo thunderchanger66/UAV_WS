@@ -13,21 +13,35 @@
 
 class TrajectoryMake {
 public:
-    TrajectoryMake(int order = 7): order_(order), n_coeff_(order + 1) {}
+    //假设7阶多项式，最大速度和加速度都是2
+    TrajectoryMake(int order = 7, double vmax = 2, double amax = 2): 
+        order_(order), n_coeff_(order + 1), v_max(vmax), a_max(amax) {}
 
     void setWaypoints(const std::vector<Eigen::Vector3d>& pts);
-    void setSegmentTimes(const std::vector<double>& times);
+    //void setSegmentTimes(const std::vector<double>& times);
 
     void solve(int xyz);
 
-    Eigen::VectorXd get_coeff_x_() {
-        return coeff_x_;
+    Eigen::VectorXd get_coeff_x_() { return coeff_x_; }
+    Eigen::VectorXd get_coeff_y_() { return coeff_y_; }
+    Eigen::VectorXd get_coeff_z_() { return coeff_z_; }
+    //前n_coeff_ * n_seg_是x，以此类推
+    Eigen::VectorXd get_coeff_xyz_() {
+        Eigen::VectorXd coeff_xyz_(n_coeff_ * n_seg_ * 3);
+        coeff_xyz_ << coeff_x_, coeff_y_, coeff_z_;
+        return coeff_xyz_;
     }
+
+    double computeSegmentTime(
+        const Eigen::Vector3d& p0,
+        const Eigen::Vector3d& p1);
 
 private:
     int order_;//阶数
     int n_coeff_;//系数的数目，等于order+1
     int n_seg_;//分段的数目，跟waypoints的数目有关，Waypoints-1
+
+    double v_max, a_max;//事先定义好最大速度及最大加速度
 
     std::vector<double> T_;//每段的时间
     std::vector<Eigen::Vector3d> waypoints_;//途径点的集合
