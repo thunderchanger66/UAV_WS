@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <Eigen/Dense>
+#include <fstream>
 
 int main() {
     std::cout<<"Hello world!"<<std::endl;
@@ -14,12 +15,8 @@ int main() {
     //std::vector<double> times = {2.0, 2.0};
     TrajectoryMake tra;
     tra.setWaypoints(pts);
-    for (int i = 0; i < 3; i++)
-        tra.solve(i);
-    
-    //std::cout<<tra.get_coeff_xyz_().transpose()<<std::endl;
-    std::cout<<tra.get_coeff_x_().transpose()<<std::endl;
-    std::cout<<tra.get_coeff_y_().transpose()<<std::endl;
-    std::cout<<tra.get_coeff_z_().transpose()<<std::endl;
+    tra.solve();
+    tra.sample();
+
     return 0;
 }

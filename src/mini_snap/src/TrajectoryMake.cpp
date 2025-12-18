@@ -119,24 +119,25 @@ void TrajectoryMake::buildConstraints(int xyz) {
     }
 }
 
-void TrajectoryMake::solve(int xyz) {
-    buildCost();
-    buildConstraints(xyz);
-    Eigen::MatrixXd KKT(H_.rows() + A_.rows(), H_.cols() + A_.rows());//这里列数A转置了，所以直接用行
-    KKT << H_, A_.transpose(), A_, Eigen::MatrixXd::Zero(A_.rows(), A_.rows());
-    Eigen::VectorXd rhs(H_.rows() + A_.rows());
-    rhs << Eigen::VectorXd::Zero(H_.rows()), b_;
-    Eigen::VectorXd sol = KKT.fullPivLu().solve(rhs);
-    switch(xyz) {//确定每个方向的系数
-        case 0:
-            coeff_x_ = sol.head(H_.rows());
-            break;
-        case 1:
-            coeff_y_ = sol.head(H_.rows());
-            break;
-        case 2:
-            coeff_z_ = sol.head(H_.rows());
-            break;
+void TrajectoryMake::solve() {
+    for (int i = 0; i < 3; i++) {//分别求解xyz方向上的
+        buildCost();
+        buildConstraints(i);
+        Eigen::MatrixXd KKT(H_.rows() + A_.rows(), H_.cols() + A_.rows());//这里列数A转置了，所以直接用行
+        KKT << H_, A_.transpose(), A_, Eigen::MatrixXd::Zero(A_.rows(), A_.rows());
+        Eigen::VectorXd rhs(H_.rows() + A_.rows());
+        rhs << Eigen::VectorXd::Zero(H_.rows()), b_;
+        Eigen::VectorXd sol = KKT.fullPivLu().solve(rhs);
+        switch(i) {//确定每个方向的系数
+            case 0:
+                coeff_x_ = sol.head(H_.rows());
+                break;
+            case 1:
+                coeff_y_ = sol.head(H_.rows());
+                break;
+            case 2:
+                coeff_z_ = sol.head(H_.rows());
+        }
     }
 }
 
@@ -158,3 +159,28 @@ double TrajectoryMake::computeSegmentTime(
         else//这里一段是1/2a\Delta{t}，两段加一起是d，但是这是\Delta{t}，总的t是乘2
             return std::sqrt(d / a_max) * 2;
     }
+
+//这里设定每100ms采样1次，与offboard控制模式的控制频率相同
+void TrajectoryMake::sample(double dt) {
+    bool first_seg = true;
+    for (int i = 0; i < n_seg_; i++) {//总段数
+        int steps = static_cast<int>(std::floor(T_[i] / dt));
+        for (int j = 0; j <= steps; j++) {//每100ms采样1次，同时在第i段
+            if (!first_seg && j == 0) continue;// 如果不是首段，那么下一段起始值和前一段最后的值相等，不用再算
+            double t = std::min(j * dt, T_[i]);
+
+            double x = 0.0, y = 0.0, z = 0.0;
+            for (int k = 0; k < n_coeff_; k++) {//多项式求和
+                double tk = std::pow(t, k);
+                x += coeff_x_[i * n_coeff_ + k] * tk;
+                y += coeff_y_[i * n_coeff_ + k] * tk;
+                z += coeff_z_[i * n_coeff_ + k] * tk;
+            }
+            sample_x_.push_back(x);
+            sample_y_.push_back(y);
+            sample_z_.push_back(z);
+            sample_t_.push_back(t);//临时添加
+        }
+        first_seg = false;
+    }
+}

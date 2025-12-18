@@ -20,28 +20,31 @@ public:
     void setWaypoints(const std::vector<Eigen::Vector3d>& pts);
     //void setSegmentTimes(const std::vector<double>& times);
 
-    void solve(int xyz);
+    void solve();
 
-    Eigen::VectorXd get_coeff_x_() { return coeff_x_; }
-    Eigen::VectorXd get_coeff_y_() { return coeff_y_; }
-    Eigen::VectorXd get_coeff_z_() { return coeff_z_; }
-    //前n_coeff_ * n_seg_是x，以此类推
-    Eigen::VectorXd get_coeff_xyz_() {
-        Eigen::VectorXd coeff_xyz_(n_coeff_ * n_seg_ * 3);
-        coeff_xyz_ << coeff_x_, coeff_y_, coeff_z_;
-        return coeff_xyz_;
-    }
+    // Eigen::VectorXd get_coeff_x_() { return coeff_x_; }
+    // Eigen::VectorXd get_coeff_y_() { return coeff_y_; }
+    // Eigen::VectorXd get_coeff_z_() { return coeff_z_; }
+    // //前n_coeff_ * n_seg_是x，以此类推
+    // Eigen::VectorXd get_coeff_xyz_() {
+    //     Eigen::VectorXd coeff_xyz_(n_coeff_ * n_seg_ * 3);
+    //     coeff_xyz_ << coeff_x_, coeff_y_, coeff_z_;
+    //     return coeff_xyz_;
+    // }
 
-    double computeSegmentTime(
-        const Eigen::Vector3d& p0,
-        const Eigen::Vector3d& p1);
+    void sample(double dt = 0.1);//最重要的函数，计算采样后的值 默认100ms
 
 private:
     int order_;//阶数
     int n_coeff_;//系数的数目，等于order+1
     int n_seg_;//分段的数目，跟waypoints的数目有关，Waypoints-1
-
     double v_max, a_max;//事先定义好最大速度及最大加速度
+
+    //std::vector<Eigen::Vector3d> sampleWaypoints_;//采样后真正的路径点
+    std::vector<double> sample_x_;
+    std::vector<double> sample_y_;
+    std::vector<double> sample_z_;
+    std::vector<double> sample_t_;//画图需要t，临时用
 
     std::vector<double> T_;//每段的时间
     std::vector<Eigen::Vector3d> waypoints_;//途径点的集合
@@ -58,4 +61,8 @@ private:
     Eigen::VectorXd derivativeBasis(double t, int d);
     //这里要给定是计算哪个方向的约束，定义0，1，2为x，y，z
     void buildConstraints(int xyz);
+
+    double computeSegmentTime(
+    const Eigen::Vector3d& p0,
+    const Eigen::Vector3d& p1);
 };
