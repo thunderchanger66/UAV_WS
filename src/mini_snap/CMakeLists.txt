@@ -8,6 +8,7 @@ endif()
 # find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(px4_msgs REQUIRED)
 
 find_package(eigen3_cmake_module REQUIRED)
 find_package(Eigen3 REQUIRED)
@@ -15,7 +16,7 @@ find_package(Eigen3 REQUIRED)
 include_directories(include)
 
 add_executable(MiniSnap src/TrajectoryMake.cpp src/MiniSnap.cpp)
-ament_target_dependencies(MiniSnap Eigen3)
+ament_target_dependencies(MiniSnap Eigen3 rclcpp px4_msgs)
 install(TARGETS MiniSnap DESTINATION lib/${PROJECT_NAME})
 
 if(BUILD_TESTING)

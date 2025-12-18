@@ -14,7 +14,7 @@
 class TrajectoryMake {
 public:
     //假设7阶多项式，最大速度和加速度都是2
-    TrajectoryMake(int order = 7, double vmax = 2, double amax = 2): 
+    TrajectoryMake(int order = 7, double vmax = 1, double amax = 1): 
         order_(order), n_coeff_(order + 1), v_max(vmax), a_max(amax) {}
 
     void setWaypoints(const std::vector<Eigen::Vector3d>& pts);
