@@ -13,7 +13,7 @@
 #include "px4_msgs/msg/vehicle_odometry.hpp"
 
 /*待优化
-1.命令行坐标输入
+1.命令行坐标输入 //完成，传入整个数组，在每三个解析即可
 2.完全arm后再启动
 3.Rviz中显示轨迹
 */
@@ -22,15 +22,11 @@ class ToFly : public rclcpp::Node {
 public:
     ToFly() : Node("tofly") {
         //参数声明，xyz点
-        this->declare_parameter<std::vector<double>>("X", std::vector<double>{});
-        this->declare_parameter<std::vector<double>>("Y", std::vector<double>{});
-        this->declare_parameter<std::vector<double>>("Z", std::vector<double>{});
+        this->declare_parameter<std::vector<double>>("points", std::vector<double>{});//加参数 -p points:="[x0,y0,z0, x1,y1,z1...]"
         //获取参数
-        this->get_parameter("X", X);
-        this->get_parameter("Y", Y);
-        this->get_parameter("Z", Z);
-        if (X.size() != Y.size() || X.size() != Z.size()) {
-            RCLCPP_ERROR(get_logger(), "Waypoint size mismatch");
+        this->get_parameter("points", points);
+        if (points.size() % 3 != 0) {
+            RCLCPP_ERROR(this->get_logger(), "Parameter fault!");
             return;
         }
 
@@ -58,9 +54,10 @@ public:
                 offboard_flag = true;//这里注意，需要确定无人机已经完全arm才能发送坐标命令，需要优化
             }
 
-            publish_offboard_control_mode();
-            if(got_initial_pose_ && offboard_flag)//需要获得初始位置及已经在offboard模式
+            if(got_initial_pose_ && offboard_flag) {//需要获得初始位置及已经在offboard模式
+                publish_offboard_control_mode();
                 publish_trajectory_setpoint();
+            }
 
             if (offboard_setpoint_counter_ < 11) offboard_setpoint_counter_++;
         };
@@ -84,9 +81,6 @@ private:
 
     int traj_index = 0;//确定现在跟踪哪个点
 
-    //创建途径点集合
-    std::vector<double> X, Y, Z;//输入的参数途径点，不包含起始点
-
     //真正的离散的路径点
     std::vector<double> x_pos_, y_pos_, z_pos_;
 
@@ -96,7 +90,10 @@ private:
     TrajectoryMake tra_;
     void planTrajectory(const std::vector<Eigen::Vector3d>& pts);
 
-    bool offboard_flag;
+    bool offboard_flag;//是否进入offboard模式
+
+    //更方便的传入途径点    //创建途径点集合
+    std::vector<double> points;
 };
 
 void ToFly::publish_vehicle_command(uint16_t command, float param1, float param2) {
@@ -149,8 +146,9 @@ void ToFly::vehicle_odometry_subscription_callback(const px4_msgs::msg::VehicleO
 
         std::vector<Eigen::Vector3d> pts;
         pts.emplace_back(x0, y0, z0);
-        for (size_t i = 0; i < X.size(); i++) 
-            pts.emplace_back(X[i], Y[i], Z[i]);
+
+        for (size_t i = 0; i < points.size(); i+=3) 
+            pts.emplace_back(points[i], points[i + 1], points[i + 2]);
 
         planTrajectory(pts);
         RCLCPP_INFO(this->get_logger(), "Got initial pose and planned trajectory: start=(%f, %f, %f), samples=%zu", x0, y0, z0, x_pos_.size());
