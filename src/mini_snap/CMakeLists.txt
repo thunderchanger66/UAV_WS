@@ -9,15 +9,21 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(px4_msgs REQUIRED)
+find_package(nav_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
 
 find_package(eigen3_cmake_module REQUIRED)
 find_package(Eigen3 REQUIRED)
 
 include_directories(include)
 
-add_executable(MiniSnap src/TrajectoryMake.cpp src/MiniSnap.cpp)
+add_executable(MiniSnap src/TrajectoryMake.cpp src/MiniSnap.cpp src/ToFly.cpp)
 ament_target_dependencies(MiniSnap Eigen3 rclcpp px4_msgs)
 install(TARGETS MiniSnap DESTINATION lib/${PROJECT_NAME})
+
+add_executable(PosRviz src/PosRviz.cpp)
+ament_target_dependencies(PosRviz nav_msgs geometry_msgs rclcpp px4_msgs)
+install(TARGETS PosRviz DESTINATION lib/${PROJECT_NAME})
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
