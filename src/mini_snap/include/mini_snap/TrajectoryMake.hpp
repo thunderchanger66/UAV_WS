@@ -13,7 +13,7 @@
 
 class TrajectoryMake {
 public:
-    //假设7阶多项式，最大速度和加速度都是2
+    //7阶多项式，假设最大速度和加速度都是
     TrajectoryMake(int order = 7, double vmax = 1, double amax = 1): 
         order_(order), n_coeff_(order + 1), v_max(vmax), a_max(amax) {}
 
