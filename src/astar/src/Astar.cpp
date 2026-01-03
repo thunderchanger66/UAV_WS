@@ -22,8 +22,8 @@ std::vector<std::pair<int,int>> Astar::getNeighbors(Node* node, bool use_diagona
     for(int i = 0; i < count; i++) {
         int nx = node->x + dx[i];
         int ny = node->y + dy[i];
-        //这里考虑是否越界及是否为障碍物（注意 grid[row][col] 即 grid[y][x]）
-        if(inbounds(nx, ny) && !grid[ny][nx]) {
+        //这里考虑是否越界及是否为障碍物
+        if(inbounds(nx, ny) && !grid[nx][ny]) {
             neighbors.emplace_back(nx, ny);
         }
     }
@@ -48,7 +48,7 @@ std::vector<std::pair<int, int>> Astar::findPath(const std::vector<std::vector<i
         if(!inbounds(start.first, start.second) || !inbounds(goal.first, goal.second)) return {};
         if(grid[start.second][start.first] != 0 || grid[goal.second][goal.first] != 0) return {};
 
-        //用于管理所有节点的声明周期（unique_ptr）
+        //用于管理所有节点的声明周期（unique_ptr），其实就是为了更新更好的g值
         std::unordered_map<int, std::unique_ptr<Node>> all_nodes;
         
         int start_key = hash(start.first, start.second);
@@ -78,16 +78,16 @@ std::vector<std::pair<int, int>> Astar::findPath(const std::vector<std::vector<i
             int current_key = hash(x, y);
             if (!all_nodes.count(current_key) || current != all_nodes[current_key].get()) continue;
 
-            closed[y][x] = true;//标记为已访问（注意索引顺序为 closed[row][col] = closed[y][x])
+            closed[x][y] = true;//标记为已访问（注意索引顺序为 closed[row][col] = closed[y][x])
             auto neighbors = getNeighbors(current, use_diagonal, grid);
             for(auto& coord : neighbors) {
                 int nx = coord.first, ny = coord.second;
-                if(closed[ny][nx]) continue;
+                if(closed[nx][ny]) continue;
 
                 // 可选：禁止对角穿角（防止穿过被两个障碍夹住的角）
-                if (nx != x && ny != y) {
-                    if (grid[y][nx] != 0 || grid[ny][x] != 0) continue;
-                }
+                // if (nx != x && ny != y) {
+                //     if (grid[nx][y] != 0 || grid[x][ny] != 0) continue;
+                // }
 
                 float step_cost = (nx != x && ny != y) ? 1.414f : 1.0f;
                 float tentative_g = current->g + step_cost;

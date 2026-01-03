@@ -16,6 +16,7 @@ private:
         int x, y;//当前节点坐标
         float f, g, h;//代价函数值
         Node* parent;//父节点，回溯用
+        //同迪杰斯特拉，先假设到达距离时无限，通过更新确定更短的距离
         Node(int x_, int y_) : x(x_), y(y_), f(0), g(std::numeric_limits<float>::infinity()), h(0), parent(nullptr) {}
     };
 
